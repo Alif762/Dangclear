@@ -5,6 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.*;
 import org.bukkit.entity.Item;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -28,6 +29,18 @@ public class DangClear extends JavaPlugin implements CommandExecutor {
         getConfig().addDefault("messages.next", "&7Next clear in &f%time%&7.");
         getConfig().addDefault("messages.reloaded", "&aConfig reloaded.");
         getConfig().addDefault("messages.no-permission", "&cYou don't have permission.");
+
+        // Bunyi
+        getConfig().addDefault("sounds.enabled", true);
+        getConfig().addDefault("sounds.countdown.sound", "entity.player.levelup");
+        getConfig().addDefault("sounds.countdown.volume", 1.0);
+        getConfig().addDefault("sounds.countdown.pitch", 1.0);
+        getConfig().addDefault("sounds.cleared.sound", "entity.generic.explode");
+        getConfig().addDefault("sounds.cleared.volume", 1.0);
+        getConfig().addDefault("sounds.cleared.pitch", 1.0);
+        // 0 = bunyi letupan setiap kali clear. Set 67 untuk bunyi hanya bila 67 item atau lebih dipadam.
+        getConfig().addDefault("sounds.min-items-for-explosion", 0);
+
         getConfig().options().copyDefaults(true);
         saveConfig();
 
@@ -60,6 +73,21 @@ public class DangClear extends JavaPlugin implements CommandExecutor {
         return ChatColor.translateAlternateColorCodes('&', getConfig().getString("messages." + key, ""));
     }
 
+    // ---------- Bunyi ----------
+    private void playSound(String path) {
+        if (!getConfig().getBoolean("sounds.enabled", true)) return;
+        String sound = getConfig().getString("sounds." + path + ".sound", "");
+        if (sound.isEmpty()) return;
+        float volume = (float) getConfig().getDouble("sounds." + path + ".volume", 1.0);
+        float pitch = (float) getConfig().getDouble("sounds." + path + ".pitch", 1.0);
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            try {
+                p.playSound(p.getLocation(), sound, volume, pitch);
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
     // ---------- Timer ----------
     private void tick() {
         remaining--;
@@ -70,6 +98,7 @@ public class DangClear extends JavaPlugin implements CommandExecutor {
         }
         if (warnings.contains(remaining)) {
             Bukkit.broadcastMessage(msg("warning").replace("%time%", timeText(remaining)));
+            playSound("countdown");
         }
     }
 
@@ -82,6 +111,9 @@ public class DangClear extends JavaPlugin implements CommandExecutor {
             }
         }
         Bukkit.broadcastMessage(msg("cleared").replace("%count%", String.valueOf(count)));
+
+        int min = getConfig().getInt("sounds.min-items-for-explosion", 0);
+        if (count >= min) playSound("cleared");
     }
 
     private String timeText(int s) {
@@ -121,4 +153,4 @@ public class DangClear extends JavaPlugin implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "Usage: /dangclear [now|reload]");
         return true;
     }
-                            }
+        }
