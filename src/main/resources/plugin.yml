@@ -1,0 +1,12 @@
+name: DangClear
+version: 1.0.0
+main: my.dangclear.DangClear
+api-version: "1.20"
+commands:
+  dangclear:
+    description: Item clear timer
+    usage: /dangclear [now|reload]
+permissions:
+  dangclear.admin:
+    description: Clear items now and reload config
+    default: op
